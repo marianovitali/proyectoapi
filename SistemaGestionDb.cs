@@ -24,6 +24,7 @@ namespace PreEntregaProyectoFinal.Models
 
             int opcion = int.Parse(Console.ReadLine());
             int idUsuario;
+            string nombreUsuario, contrasena;
             switch (opcion)
             {
                 case 1:
@@ -40,6 +41,20 @@ namespace PreEntregaProyectoFinal.Models
                     Console.Write("Escribir Id del Usuario para ver sus productos vendidos: ");
                     idUsuario = int.Parse(Console.ReadLine());
                     MostrarProductosVendidos(TraerProductosVendidos(idUsuario));
+                    break;
+
+                case 4:
+                    Console.Write("Escribir Id del Usuario para ver sus ventas realizadas: ");
+                    idUsuario = int.Parse(Console.ReadLine());
+                    MostrarVentas(TraerListaVentas(idUsuario));
+                    break;
+
+                case 5:
+                    Console.Write("Ingresar usuario: ");
+                    nombreUsuario = Console.ReadLine();
+                    Console.Write("Ingresar contrasena: ");
+                    contrasena = Console.ReadLine();
+                    MostrarInicioSesion(IniciarSesion(nombreUsuario, contrasena));
                     break;
             }
         }
@@ -198,7 +213,82 @@ namespace PreEntregaProyectoFinal.Models
             }
             return producto;
         }
+        //4. Traer Ventas (recibe el id del usuario y devuelve una lista de Ventas realizadas por ese usuario)
 
+        public List<VentaModel> TraerListaVentas(int idUsuario)
+        {
+            List<VentaModel> listaVentas = new List<VentaModel>();
+
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+                SqlCommand cmd = new SqlCommand();
+                cmd.Connection = connection;
+
+                cmd.CommandText = "SELECT Id, IdUsuario, Comentarios FROM Venta WHERE IdUsuario = @idUsuario";
+                cmd.Parameters.AddWithValue("@id", idUsuario);
+                SqlDataReader dr = cmd.ExecuteReader();
+
+                int id = dr.GetOrdinal("Id");
+                idUsuario = dr.GetOrdinal("IdUsuario");
+                int comentarios = dr.GetOrdinal("Comentarios");
+
+
+                while (dr.Read())
+                {
+                    VentaModel venta = new VentaModel();
+                    venta.Id = dr.GetInt64((int)id);
+                    venta.IdUsuario = dr.GetInt32(idUsuario);
+                    venta.Comentarios = dr.GetString(comentarios);
+                    listaVentas.Add(venta);
+                }
+                dr.Close();
+
+            }
+            return listaVentas;
+        }
+
+        //5. Inicio de sesion (recibe un usuario y contrasenia y devuelve un objeto Usuario)
+
+        public UsuarioModel IniciarSesion (string nombreUsuario, string contrasena)
+        {
+            UsuarioModel usuario = new UsuarioModel();
+
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+                SqlCommand cmd = new SqlCommand();
+                cmd.Connection = connection;
+
+                cmd.CommandText = "SELECT Id, Nombre, Apellido, NombreUsuario, Mail FROM Usuario WHERE NombreUsuario = @nombreUsuario AND Contrasena = @contrasena";
+                cmd.Parameters.AddWithValue("@nombreUsuario", nombreUsuario);
+                cmd.Parameters.AddWithValue("@contrasena", contrasena);
+
+                SqlDataReader dr = cmd.ExecuteReader();
+
+                int id = dr.GetOrdinal("Id");
+                int nombre = dr.GetOrdinal("Nombre");
+                int apellido = dr.GetOrdinal("Apellido");
+                nombreUsuario = dr.GetString("NombreUsuario");
+                contrasena = dr.GetString("Contrasena");
+                int mail = dr.GetOrdinal("Mail");
+
+
+                while (dr.Read())
+                {
+                    usuario.Id = dr.GetInt64((int)id);
+                    usuario.Nombre = dr.GetString(nombre);
+                    usuario.Apellido = dr.GetString(apellido);
+                    usuario.NombreUsuario = dr.GetString(nombreUsuario);
+                    usuario.Contrasena = dr.GetString(contrasena);
+                    usuario.Mail = dr.GetString(mail);
+                }
+                dr.Close();
+
+            }
+
+            return usuario;
+        }
 
 
         public void MostrarUsuario(UsuarioModel usuario)
@@ -241,6 +331,28 @@ namespace PreEntregaProyectoFinal.Models
                 Console.WriteLine("IdUsuario: {0}", item.IdUsuario);
                 Console.WriteLine("==================================================\n");
             }
+        }
+
+        public void MostrarVentas(List<VentaModel> ventas)
+        {
+            foreach (var item in ventas)
+            {
+                Console.WriteLine("==================================================");
+                Console.WriteLine("ID: {0}", item.Id);
+                Console.WriteLine("IdUsuario: {0}", item.IdUsuario);
+                Console.WriteLine("Comentarios: {0}", item.Comentarios);
+                Console.WriteLine("==================================================\n");
+            }
+        }
+
+        public void MostrarInicioSesion(UsuarioModel usuario)
+        {
+            Console.WriteLine("==================================================");
+            Console.WriteLine("Bienvenido {0}", usuario.NombreUsuario);
+            Console.WriteLine("Nombre: {0}", usuario.Nombre);
+            Console.WriteLine("Apellido: {0}", usuario.Apellido);
+            Console.WriteLine("Mail: {0}", usuario.Mail);
+            Console.WriteLine("==================================================\n");
         }
     }
 
